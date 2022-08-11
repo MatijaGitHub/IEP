@@ -9,9 +9,10 @@ COPY ./configuration.py ./configuration.py
 COPY ./models.py ./models.py
 COPY ./requirements.txt ./requirements.txt
 COPY ./migrate.py ./migrate.py
+COPY ./entry.sh ./entry.sh
 
 RUN pip install -r ./requirements.txt
 
 ENV PYTHONPATH="/opt/src/authentication"
 
-ENTRYPOINT ["entry.sh"]
+ENTRYPOINT ["./entry.sh"]

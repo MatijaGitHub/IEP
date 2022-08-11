@@ -9,7 +9,7 @@ from adminDecorator import roleCheck
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
-
+jwt = JWTManager(application)
 
 def password_check(passwd):
     val = True

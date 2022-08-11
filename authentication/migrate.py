@@ -23,7 +23,7 @@ while True:
             migrate(message="Production migration")
             upgrade()
 
-            customerRole = Role(role="store")
+            customerRole = Role(role="customer")
             storekeeperRole = Role(role="storekeeper")
             adminRole = Role(role="admin")
 
@@ -45,6 +45,6 @@ while True:
             database.session.commit()
             break
     except Exception:
-        print("Error small penis!")
+        print("Error!")
 
 

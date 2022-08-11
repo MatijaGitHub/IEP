@@ -8,6 +8,7 @@ COPY ./configuration.py ./configuration.py
 COPY ./models.py ./models.py
 COPY ./requirements.txt ./requirements.txt
 COPY ./migrate.py ./migrate.py
+COPY ./adminDecorator.py ./adminDecorator.py
 
 RUN pip install -r ./requirements.txt
 

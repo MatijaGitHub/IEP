@@ -5,6 +5,12 @@ services:
     image: adminer
     ports:
       - 8080:8080
+    networks:
+      - authnet
+      - customernet
+      - daemonnet
+      - adminnet
+      - warehousenet
   authdatabase:
     image: mysql
     environment:
@@ -65,6 +71,7 @@ services:
       - ROOT_PASSWORD=root
       - JWT_SECTET_KEY=1
       - APPLICATION=warehouse
+      - REDIS_HOST=redis
     depends_on:
       storedatabase:
         condition: service_healthy
@@ -83,6 +90,7 @@ services:
       - ROOT_PASSWORD=root
       - JWT_SECTET_KEY=1
       - APPLICATION=daemon
+      - REDIS_HOST=redis
     depends_on:
       storedatabase:
         condition: service_healthy

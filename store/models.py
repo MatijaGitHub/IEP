@@ -20,8 +20,8 @@ class OrderProduct(database.Model):
 class Product(database.Model):
     __tablename__ = "product"
     id = database.Column(database.Integer, primary_key=True)
-    categories = database.relationship("Category", secondary=CategoryProduct.__table__, back_populates="product")
-    orders = database.relationship("Order", secondary=OrderProduct.__table__, back_populates="product")
+    categories = database.relationship("Category", secondary=CategoryProduct.__table__, back_populates="products")
+    orders = database.relationship("Order", secondary=OrderProduct.__table__, back_populates="products")
     name = database.Column(database.String(256), nullable=False)
     price = database.Column(database.Float, nullable=False)
     amount = database.Column(database.Integer, nullable=False)
@@ -31,13 +31,13 @@ class Category(database.Model):
     __tablename__ = "category"
     id = database.Column(database.Integer, primary_key=True)
     category_name = database.Column(database.String(256), nullable=False)
-    products = database.relationship("Product", secondary=CategoryProduct.__table__, back_populates="category")
+    products = database.relationship("Product", secondary=CategoryProduct.__table__, back_populates="categories")
 
 
 class Order(database.Model):
     __tablename__ = "order"
     id = database.Column(database.Integer, primary_key=True)
-    products = database.relationship("Product", secondary=OrderProduct.__table__, back_populates="order")
+    products = database.relationship("Product", secondary=OrderProduct.__table__, back_populates="orders")
     totalPrice = database.Column(database.Integer, nullable=False)
     status = database.Column(database.Boolean, nullable=False)
     timestamp = database.Column(database.DateTime, nullable=False)
