@@ -114,7 +114,7 @@ def refresh():
 
 @application.route("/delete" , methods=["POST"])
 @roleCheck("admin")
-@jwt_required(refresh=True)
+@jwt_required()
 def delete():
     email = request.json.get("email","")
     emailEmpty = len(email) == 0
@@ -133,6 +133,7 @@ def delete():
         return jsonify(message="Unknown user."), 400
     database.session.delete(user)
     database.session.commit()
+    return Response(status=200)
 
 if (__name__ == "__main__"):
     database.init_app(application)

@@ -9,7 +9,8 @@ def roleCheck(role):
         def decorator(*arguments, **keywordArguments):
             verify_jwt_in_request()
             claims = get_jwt()
-            if ("role" in claims) and role == claims["role"]:
+            roleID = 3 if role == "admin" else 0
+            if ("role" in claims) and roleID == claims["role"]:
                 return function(*arguments, **keywordArguments)
             else:
                 return Response("Permission denied!", status=403)

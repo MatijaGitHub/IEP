@@ -1,0 +1,141 @@
+version: '3'
+
+services:
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+  authdatabase:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 10s
+      retries: 10
+    volumes:
+    - authvolume:/var/lib/mysql
+    networks:
+      - authnet
+  admin:
+    image: admin
+    build:
+      dockerfile: ./admin.dockerfile
+      context: ./store
+    environment:
+      - DATABASE_URL=storedatabase
+      - ROOT_USER=root
+      - ROOT_PASSWORD=root
+      - JWT_SECTET_KEY=1
+      - APPLICATION=admin
+    depends_on:
+      storedatabase:
+        condition: service_healthy
+
+    ports:
+      - 5004:5004
+    networks:
+      - adminnet
+  customer:
+    image: customer
+    build:
+      dockerfile: ./customer.dockerfile
+      context: ./store
+    environment:
+      - DATABASE_URL=storedatabase
+      - ROOT_USER=root
+      - ROOT_PASSWORD=root
+      - JWT_SECTET_KEY=1
+      - APPLICATION=customer
+    depends_on:
+      storedatabase:
+        condition: service_healthy
+    ports:
+      - 5005:5005
+    networks:
+      - customernet
+  warehouse:
+    image: warehouse
+    build:
+      dockerfile: ./warehouse.dockerfile
+      context: ./store
+    environment:
+      - DATABASE_URL=storedatabase
+      - ROOT_USER=root
+      - ROOT_PASSWORD=root
+      - JWT_SECTET_KEY=1
+      - APPLICATION=warehouse
+    depends_on:
+      storedatabase:
+        condition: service_healthy
+    ports:
+      - 5006:5006
+    networks:
+      - warehousenet
+  daemon:
+    image: daemon
+    build:
+      dockerfile: ./daemon.dockerfile
+      context: ./store
+    environment:
+      - DATABASE_URL=storedatabase
+      - ROOT_USER=root
+      - ROOT_PASSWORD=root
+      - JWT_SECTET_KEY=1
+      - APPLICATION=daemon
+    depends_on:
+      storedatabase:
+        condition: service_healthy
+    ports:
+      - 5007:5007
+    networks:
+      - daemonnet
+  authentication:
+    image: authentication
+    build:
+      dockerfile: ./authent.dockerfile
+      context: ./authentication
+    environment:
+      - DATABASE_URL=authdatabase
+      - ROOT_USER=root
+      - ROOT_PASSWORD=root
+      - JWT_SECTET_KEY=1
+      - APPLICATION=auth
+    depends_on:
+      authdatabase:
+        condition: service_healthy
+    ports:
+    - 5002:5002
+    networks:
+      - authnet
+  storedatabase:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 10s
+      retries: 10
+    volumes:
+      - storevolume:/var/lib/mysql
+    networks:
+      - customernet
+      - daemonnet
+      - adminnet
+  redis:
+    image: redis
+    command: redis-server
+    networks:
+      - daemonnet
+      - warehousenet
+
+volumes:
+  authvolume:
+  storevolume:
+
+networks:
+  authnet:
+  customernet:
+  daemonnet:
+  adminnet:
+  warehousenet:

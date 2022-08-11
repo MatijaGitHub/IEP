@@ -23,26 +23,6 @@ while True:
             migrate(message="Production migration")
             upgrade()
 
-            customerRole = Role(role="store")
-            storekeeperRole = Role(role="storekeeper")
-            adminRole = Role(role="admin")
-
-            database.session.add(customerRole)
-            database.session.add(storekeeperRole)
-            database.session.add(adminRole)
-
-            database.session.commit()
-
-            admin = User(
-                email="admin@admin.com",
-                password="1",
-                forename="admin",
-                surname="admin",
-                my_role=adminRole.id
-            )
-
-            database.session.add(admin)
-            database.session.commit()
             break
     except Exception:
         print("Error small penis!")
