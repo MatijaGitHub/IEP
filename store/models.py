@@ -16,6 +16,7 @@ class OrderProduct(database.Model):
     order_id = database.Column(database.ForeignKey("order.id"), nullable=False)
     product_id = database.Column(database.ForeignKey("product.id"), nullable=False)
     amount = database.Column(database.Integer, nullable=False)
+    amountRecieved = database.Column(database.Integer, nullable=False)
     isBought = database.Column(database.Boolean, nullable=False)
 
 
@@ -39,6 +40,7 @@ class Category(database.Model):
 class Order(database.Model):
     __tablename__ = "order"
     id = database.Column(database.Integer, primary_key=True)
+    email = database.Column(database.String(256), nullable=False)
     products = database.relationship("Product", secondary=OrderProduct.__table__, back_populates="orders")
     totalPrice = database.Column(database.Float, nullable=False)
     status = database.Column(database.Boolean, nullable=False)

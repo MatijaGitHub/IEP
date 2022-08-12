@@ -70,7 +70,7 @@ def order():
     objectCounter = 0
     totalPrice = 0
     status = True
-    orderDB = Order(totalPrice=0, status=False, timestamp=datetime.datetime.now())
+    orderDB = Order(email=get_jwt_identity(), totalPrice=0, status=False, timestamp=datetime.datetime.now().isoformat())
     database.session.add(orderDB)
     database.session.commit()
     for order in orders:
@@ -89,16 +89,20 @@ def order():
         if not product:
             return jsonify(message=f"“Invalid product for request number {objectCounter}."), 400
 
+        orderProduct = None
         if product.amount > amount:
-            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, isBought=True)
+            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, amountRecieved=amount, isBought=True)
             product.amount -= amount
-            database.session.add(product)
-            database.session.add(orderProduct)
+
         else:
             status = False
-            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, isBought=False)
-            database.session.add(orderProduct)
+            amountRecieved = product.amount
+            product.amount = 0
+            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, amountRecieved=amountRecieved, isBought=False)
+
         totalPrice += product.price * amount
+        database.session.add(product)
+        database.session.add(orderProduct)
         database.session.commit()
 
         objectCounter += 1
@@ -108,6 +112,14 @@ def order():
     database.session.add(orderDB)
     database.session.commit()
     return jsonify(id=orderDB.id), 200
+
+@application.route("/status", methods=["GET"])
+@roleCheck("customer")
+def status():
+    email = get_jwt_identity()
+    orders = Order.query.filter(Order.email == email).all()
+    ordersJSON = [{"products": [{"categories":[category.category_name for category in product.categories], "name": product.name,"price" : product.price, "recieved": OrderProduct.query.filter(and_(OrderProduct.order_id == order.id, OrderProduct.product_id == product.id)).first().amountRecieved,"requested": OrderProduct.query.filter(and_(OrderProduct.order_id == order.id, OrderProduct.product_id == product.id)).first().amount}for product in order.products], "price":order.totalPrice, "status": ("COMPLETE" if order.status == True else "PENDING"), "timestamp": order.timestamp.isoformat()} for order in orders]
+    return jsonify(orders=ordersJSON), 200
 
 
 if (__name__ == "__main__"):

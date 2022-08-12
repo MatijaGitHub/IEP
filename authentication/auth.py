@@ -47,6 +47,8 @@ def register():
         return jsonify(message="Field forename is missing."), 400
     if surnameEmpty:
         return jsonify(message="Field surname is missing."), 400
+    if isCustomer == "":
+        return jsonify(message="Field isCustomer is missing."), 400
 
     result = parseaddr(email)
     if (len(result[1]) == 0 or emailTooLong):
