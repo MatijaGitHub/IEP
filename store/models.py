@@ -15,6 +15,8 @@ class OrderProduct(database.Model):
     id = database.Column(database.Integer, primary_key=True)
     order_id = database.Column(database.ForeignKey("order.id"), nullable=False)
     product_id = database.Column(database.ForeignKey("product.id"), nullable=False)
+    amount = database.Column(database.Integer, nullable=False)
+    isBought = database.Column(database.Boolean, nullable=False)
 
 
 class Product(database.Model):
@@ -38,6 +40,6 @@ class Order(database.Model):
     __tablename__ = "order"
     id = database.Column(database.Integer, primary_key=True)
     products = database.relationship("Product", secondary=OrderProduct.__table__, back_populates="orders")
-    totalPrice = database.Column(database.Integer, nullable=False)
+    totalPrice = database.Column(database.Float, nullable=False)
     status = database.Column(database.Boolean, nullable=False)
     timestamp = database.Column(database.DateTime, nullable=False)
