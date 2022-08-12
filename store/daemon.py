@@ -5,7 +5,7 @@ from sys import stdout
 from redis import Redis
 from flask import Flask, request, Response, jsonify
 from configuration import Configuration
-from models import database, Product, Category, CategoryProduct
+from models import database, Product, Category, CategoryProduct, OrderProduct, Order
 from email.utils import parseaddr
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, create_refresh_token, get_jwt, \
     get_jwt_identity
@@ -47,17 +47,39 @@ if (__name__ == "__main__"):
                                     break
                         if not equal:
                             continue
-                        else:
-                            cA = product_exists.amount
-                            cP = product_exists.price
-                            dA = product["amount"]
-                            dP = product["price"]
-                            newQuantity = product_exists.amount + product["amount"]
-                            newPrice = (cA * cP + dA * dP)/(dA + cA)
-                            product_exists.price = newPrice
-                            product_exists.amount = newQuantity
-                            database.session.add(product_exists)
-                            database.session.commit()
 
+                        cA = product_exists.amount
+                        cP = product_exists.price
+                        dA = product["amount"]
+                        dP = product["price"]
+                        newQuantity = product_exists.amount + product["amount"]
+                        newPrice = (cA * cP + dA * dP)/(dA + cA)
+                        product_exists.price = newPrice
+                        product_exists.amount = newQuantity
+                        database.session.add(product_exists)
+                        database.session.commit()
+                        orders = OrderProduct.query.join(Order, Order.id == OrderProduct.order_id).filter(and_(OrderProduct.product_id == product_exists.id, OrderProduct.isBought == False)).order_by(Order.timestamp).all()
+                        print(orders)
+                        stdout.flush()
+                        for order in orders:
+                            if product_exists.amount > order.amount - order.amountRecieved:
+                                product_exists.amount -= order.amount - order.amountRecieved
+                                order.amountRecieved = order.amount
+                                order.isBought = True
+                                database.session.add(order)
+                                database.session.flush()
+                                handeledOrderes = OrderProduct.query.filter(and_(OrderProduct.order_id == order.order_id, OrderProduct.isBought == False)).all()
+                                if len(handeledOrderes) == 0:
+                                    order = Order.query.filter(Order.id == order.order_id).first()
+                                    order.status = True
+                                    database.session.add(order)
+                                    database.session.flush()
+                            else:
+                                order.amountRecieved += product_exists.amount
+                                product_exists.amount = 0
+                                database.session.add(order)
+                                break
 
+                        database.session.add(product_exists)
+                        database.session.commit()
 
