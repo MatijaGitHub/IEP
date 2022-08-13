@@ -61,7 +61,7 @@ if (__name__ == "__main__"):
                         database.session.commit()
                         orders = OrderProduct.query.join(Order, Order.id == OrderProduct.order_id).filter(and_(OrderProduct.product_id == product_exists.id, OrderProduct.isBought == False)).order_by(Order.timestamp).all()
                         for order in orders:
-                            if product_exists.amount > order.amount - order.amountRecieved:
+                            if product_exists.amount >= order.amount - order.amountRecieved:
                                 product_exists.amount -= order.amount - order.amountRecieved
                                 order.amountRecieved = order.amount
                                 order.isBought = True

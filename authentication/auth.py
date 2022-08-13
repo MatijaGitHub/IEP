@@ -134,7 +134,7 @@ def refresh():
     additionalClaims = {
         "forename": refreshClaims["forename"],
         "surname": refreshClaims["surname"],
-        "role": getRoleName(refreshClaims["role"])
+        "role": refreshClaims["role"]
     }
     print(additionalClaims)
     stdout.flush()
