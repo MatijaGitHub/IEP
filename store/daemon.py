@@ -54,13 +54,12 @@ if (__name__ == "__main__"):
                         dP = product["price"]
                         newQuantity = product_exists.amount + product["amount"]
                         newPrice = (cA * cP + dA * dP)/(dA + cA)
+                        print(f"Product {product_exists.name} new price {newPrice}")
                         product_exists.price = newPrice
                         product_exists.amount = newQuantity
                         database.session.add(product_exists)
                         database.session.commit()
                         orders = OrderProduct.query.join(Order, Order.id == OrderProduct.order_id).filter(and_(OrderProduct.product_id == product_exists.id, OrderProduct.isBought == False)).order_by(Order.timestamp).all()
-                        print(orders)
-                        stdout.flush()
                         for order in orders:
                             if product_exists.amount > order.amount - order.amountRecieved:
                                 product_exists.amount -= order.amount - order.amountRecieved

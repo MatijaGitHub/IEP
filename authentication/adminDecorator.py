@@ -1,6 +1,6 @@
 from functools import wraps
 from flask_jwt_extended import verify_jwt_in_request, get_jwt
-from flask import Response
+from flask import Response, jsonify
 
 
 def roleCheck(role):
@@ -9,15 +9,15 @@ def roleCheck(role):
         def decorator(*arguments, **keywordArguments):
             verify_jwt_in_request()
             claims = get_jwt()
-            roleID = 1
-            if role == "admin":
-                roleID = 3
-            elif role == "storekeeper":
-                roleID = 2
-            if ("role" in claims) and roleID == claims["role"]:
+            #roleID = 1
+            #if role == "admin":
+                #roleID = 3
+            #elif role == "storekeeper":
+               # roleID = 2
+            if ("role" in claims) and role == claims["role"]:
                 return function(*arguments, **keywordArguments)
             else:
-                return Response("Permission denied!", status=403)
+                return jsonify(msg="Missing Authorization Header"),401
 
         return decorator
 

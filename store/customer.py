@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import datetime
+from sys import stdout
 
 from redis import Redis
 from flask import Flask, request, Response, jsonify
@@ -65,52 +66,70 @@ def search():
 @roleCheck("customer")
 def order():
     orders = request.json.get("requests", "")
-    if not orders:
+    if orders == "":
         return jsonify(message="Field requests is missing."), 400
     objectCounter = 0
     totalPrice = 0
     status = True
     orderDB = Order(email=get_jwt_identity(), totalPrice=0, status=False, timestamp=datetime.datetime.now().isoformat())
     database.session.add(orderDB)
-    database.session.commit()
+    database.session.flush()
     for order in orders:
-        id = order["id"]
-        amount = order["quantity"]
+        try:
+            id = order["id"]
+        except:
+            return jsonify(message=f"Product id is missing for request number {objectCounter}."), 400
+        try:
+            amount = order["quantity"]
+        except:
+            return jsonify(message=f"Product quantity is missing for request number {objectCounter}."), 400
         if not id:
             return jsonify(message=f"Product id is missing for request number {objectCounter}."), 400
         if not amount:
             return jsonify(message=f"Product quantity is missing for request number {objectCounter}."), 400
+
+        try:
+            id = int(id)
+        except:
+            return jsonify(message=f"Invalid product id for request number {objectCounter}."), 400
         if id <= 0:
-            return jsonify(message=f"“Invalid product id for request number {objectCounter}."), 400
+            return jsonify(message=f"Invalid product id for request number {objectCounter}."), 400
+
+        try:
+            amount = int(amount)
+        except:
+            return jsonify(message=f"Invalid product quantity for request number {objectCounter}."), 400
         if amount <= 0:
-            return jsonify(message=f"“Invalid product quantity for request number {objectCounter}."), 400
+            return jsonify(message=f"Invalid product quantity for request number {objectCounter}."), 400
 
         product = Product.query.filter(Product.id == id).first()
         if not product:
-            return jsonify(message=f"“Invalid product for request number {objectCounter}."), 400
+            return jsonify(message=f"Invalid product for request number {objectCounter}."), 400
 
         orderProduct = None
-        if product.amount > amount:
-            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, amountRecieved=amount, isBought=True)
+        if product.amount >= amount:
+            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, amountRecieved=amount, isBought=True, soldPrice=product.price)
             product.amount -= amount
 
         else:
             status = False
             amountRecieved = product.amount
             product.amount = 0
-            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, amountRecieved=amountRecieved, isBought=False)
+            orderProduct = OrderProduct(order_id=orderDB.id, product_id=product.id, amount=amount, amountRecieved=amountRecieved, isBought=False , soldPrice=product.price)
+
 
         totalPrice += product.price * amount
         database.session.add(product)
         database.session.add(orderProduct)
-        database.session.commit()
+        database.session.flush()
 
         objectCounter += 1
 
-    orderDB.status = status
-    orderDB.totalPrice = totalPrice
-    database.session.add(orderDB)
-    database.session.commit()
+    if len(orders) > 0:
+        orderDB.status = status
+        orderDB.totalPrice = totalPrice
+        database.session.add(orderDB)
+        database.session.commit()
     return jsonify(id=orderDB.id), 200
 
 @application.route("/status", methods=["GET"])
@@ -118,7 +137,9 @@ def order():
 def status():
     email = get_jwt_identity()
     orders = Order.query.filter(Order.email == email).all()
-    ordersJSON = [{"products": [{"categories":[category.category_name for category in product.categories], "name": product.name,"price" : product.price, "recieved": OrderProduct.query.filter(and_(OrderProduct.order_id == order.id, OrderProduct.product_id == product.id)).first().amountRecieved,"requested": OrderProduct.query.filter(and_(OrderProduct.order_id == order.id, OrderProduct.product_id == product.id)).first().amount}for product in order.products], "price":order.totalPrice, "status": ("COMPLETE" if order.status == True else "PENDING"), "timestamp": order.timestamp.isoformat()} for order in orders]
+    print(orders)
+    stdout.flush()
+    ordersJSON = [{"products": [{"categories":[category.category_name for category in product.categories], "name": product.name,"price" : OrderProduct.query.filter(and_(OrderProduct.order_id == order.id, OrderProduct.product_id == product.id)).first().soldPrice, "received": OrderProduct.query.filter(and_(OrderProduct.order_id == order.id, OrderProduct.product_id == product.id)).first().amountRecieved,"requested": OrderProduct.query.filter(and_(OrderProduct.order_id == order.id, OrderProduct.product_id == product.id)).first().amount}for product in order.products], "price":order.totalPrice, "status": ("COMPLETE" if order.status == True else "PENDING"), "timestamp": order.timestamp.isoformat()} for order in orders]
     return jsonify(orders=ordersJSON), 200
 
 

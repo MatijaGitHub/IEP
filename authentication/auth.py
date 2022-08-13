@@ -1,3 +1,5 @@
+from sys import stdout
+
 from flask import Flask, request, Response, jsonify
 from configuration import Configuration
 from models import database, User, Role
@@ -6,10 +8,19 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, cr
     get_jwt_identity
 from sqlalchemy import and_
 from adminDecorator import roleCheck
+from email_validator import validate_email
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
 jwt = JWTManager(application)
+
+def getRoleName(idRole):
+    if idRole == 1:
+        return "customer"
+    elif idRole == 2:
+        return "storekeeper"
+    else:
+        return "admin"
 
 def password_check(passwd):
     val = True
@@ -17,11 +28,11 @@ def password_check(passwd):
         val = False
     if len(passwd) > 256:
         val = False
-    if not any(char.isdigit() for char in passwd):
+    if not any(char.isdigit() for char in str(passwd)):
         val = False
-    if not any(char.isupper() for char in passwd):
+    if not any(char.isupper() for char in str(passwd)):
         val = False
-    if not any(char.islower() for char in passwd):
+    if not any(char.islower() for char in str(passwd)):
         val = False
     return val
 @application.route("/register", methods=["POST"])
@@ -38,20 +49,25 @@ def register():
     forenameEmpty = len(forename) == 0
     surnameEmpty = len(surname) == 0
 
-
-    if emailEmpty:
-        return jsonify(message="Field email is missing."), 400
-    if passwordEmpty:
-        return jsonify(message="Field password is missing."), 400
     if forenameEmpty:
         return jsonify(message="Field forename is missing."), 400
     if surnameEmpty:
         return jsonify(message="Field surname is missing."), 400
+    if emailEmpty:
+        return jsonify(message="Field email is missing."), 400
+    if passwordEmpty:
+        return jsonify(message="Field password is missing."), 400
     if isCustomer == "":
         return jsonify(message="Field isCustomer is missing."), 400
 
-    result = parseaddr(email)
-    if (len(result[1]) == 0 or emailTooLong):
+   # result = parseaddr(email)
+    #print(result)
+    #stdout.flush()
+    #if (result[1] == '' or emailTooLong):
+        #return jsonify(message="Invalid email."), 400
+    try:
+        validate_email(email)
+    except:
         return jsonify(message="Invalid email."), 400
     if not password_check(password):
         return jsonify(message="Invalid password."), 400
@@ -81,8 +97,14 @@ def login():
         return jsonify(message="Field email is missing."), 400
     if passwordEmpty:
         return jsonify(message="Field password is missing."), 400
-    result = parseaddr(email)
-    if len(result[1]) == 0 or emailTooLong:
+    #result = parseaddr(email)
+    #if len(result[1]) == 0 or emailTooLong:
+        #return jsonify(message="Invalid email."), 400
+    try:
+        validate_email(email)
+    except:
+        return jsonify(message="Invalid email."), 400
+    if emailTooLong:
         return jsonify(message="Invalid email."), 400
     user = User.query.filter(and_(User.email == email, User.password == password)).first()
 
@@ -92,7 +114,7 @@ def login():
     additionalClaims = {
         "forename": user.forename,
         "surname": user.surname,
-        "role": user.my_role
+        "role": getRoleName(user.my_role)
     }
 
     accessToken = create_access_token(identity=user.email, additional_claims=additionalClaims)
@@ -105,18 +127,22 @@ def login():
 def refresh():
     identity = get_jwt_identity()
     refreshClaims = get_jwt()
+    print("BOZE ZASTO")
+    print(identity)
+    print(refreshClaims)
 
     additionalClaims = {
         "forename": refreshClaims["forename"],
         "surname": refreshClaims["surname"],
-        "role": refreshClaims["role"]
+        "role": getRoleName(refreshClaims["role"])
     }
+    print(additionalClaims)
+    stdout.flush()
 
     return jsonify(accessToken=create_access_token(identity=identity, additional_claims=additionalClaims)), 200
 
 @application.route("/delete" , methods=["POST"])
 @roleCheck("admin")
-@jwt_required()
 def delete():
     email = request.json.get("email","")
     emailEmpty = len(email) == 0
@@ -126,10 +152,14 @@ def delete():
         return jsonify(message="Field email is missing."), 400
 
 
-    result = parseaddr(email)
-    if len(result[1]) == 0 or emailTooLong:
-        return jsonify(message="Invalid email."), 400
+    #result = parseaddr(email)
+    #if len(result[1]) == 0 or emailTooLong:
+        #return jsonify(message="Invalid email."), 400
 
+    try:
+        validate_email(email)
+    except:
+        return jsonify(message="Invalid email."), 400
     user = User.query.filter(User.email == email).first()
     if not user:
         return jsonify(message="Unknown user."), 400

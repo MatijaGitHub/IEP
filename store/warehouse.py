@@ -20,9 +20,12 @@ jwt = JWTManager(application)
 @application.route("/update", methods=["POST"])
 @roleCheck("storekeeper")
 def update():
-    file = request.files["file"]
+    try:
+        file = request.files["file"]
+    except:
+        return jsonify(message="Field file is missing."), 400
     if not file:
-        return jsonify(message="Field file missing."), 400
+        return jsonify(message="Field file is missing."), 400
     content = file.stream.read().decode("utf-8")
     stream = io.StringIO(content)
     reader = csv.reader(stream)
@@ -34,12 +37,21 @@ def update():
         categories = row[0].split("|")
 
         name = row[1]
-        amount = int(row[2])
-        if amount <= 0:
+        amount = ""
+        try:
+            amount = int(row[2])
+        except:
             return jsonify(message=f"Incorrect quantity on line {line}."), 400
-        cost = float(row[3])
-        if cost <= 0:
+        if not isinstance(amount,int) or int(amount) <= 0:
+            return jsonify(message=f"Incorrect quantity on line {line}."), 400
+
+        try:
+            cost = float(row[3])
+        except:
             return jsonify(message=f"Incorrect price on line {line}."), 400
+        if float(cost) <= 0:
+            return jsonify(message=f"Incorrect price on line {line}."), 400
+
         product = {
             "categories": categories,
             "name": name,

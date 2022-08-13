@@ -18,6 +18,7 @@ class OrderProduct(database.Model):
     amount = database.Column(database.Integer, nullable=False)
     amountRecieved = database.Column(database.Integer, nullable=False)
     isBought = database.Column(database.Boolean, nullable=False)
+    soldPrice = database.Column(database.Float, nullable=False)
 
 
 class Product(database.Model):
