@@ -34,8 +34,8 @@ def productStatistics():
 @application.route("/categoryStatistics", methods=["GET"])
 @roleCheck("admin")
 def categoryStatistics():
-    sumRecieved = func.sum(OrderProduct.amountRecieved)
-    sortedCategories = Category.query.join(CategoryProduct).join(OrderProduct, CategoryProduct.product_id == OrderProduct.product_id)\
+    sumRecieved = func.coalesce(func.sum(OrderProduct.amountRecieved), 0)
+    sortedCategories = Category.query.outerjoin(CategoryProduct, Category.id == CategoryProduct.category_id).outerjoin(OrderProduct, CategoryProduct.product_id == OrderProduct.product_id)\
         .group_by(Category.id).order_by(sumRecieved.desc()).order_by(Category.category_name).with_entities(Category.category_name).all()
     print(sortedCategories)
     stdout.flush()

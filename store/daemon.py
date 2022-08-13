@@ -31,6 +31,8 @@ if (__name__ == "__main__"):
                         for category in product["categories"]:
                             category_exists = Category.query.filter_by(category_name=category).first()
                             if not category_exists:
+                                print(category)
+                                stdout.flush()
                                 category_exists = Category(category_name=category)
                                 database.session.add(category_exists)
                                 database.session.flush()
