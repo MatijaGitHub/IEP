@@ -64,9 +64,10 @@ if (__name__ == "__main__"):
                         orders = OrderProduct.query.join(Order, Order.id == OrderProduct.order_id).filter(and_(OrderProduct.product_id == product_exists.id, OrderProduct.isBought == False)).order_by(Order.timestamp).all()
                         for order in orders:
                             if product_exists.amount >= order.amount - order.amountRecieved:
-                                product_exists.amount -= order.amount - order.amountRecieved
+                                product_exists.amount -= (order.amount - order.amountRecieved)
                                 order.amountRecieved = order.amount
                                 order.isBought = True
+                                database.session.add(product_exists)
                                 database.session.add(order)
                                 database.session.flush()
                                 handeledOrderes = OrderProduct.query.filter(and_(OrderProduct.order_id == order.order_id, OrderProduct.isBought == False)).all()
@@ -78,9 +79,10 @@ if (__name__ == "__main__"):
                             else:
                                 order.amountRecieved += product_exists.amount
                                 product_exists.amount = 0
+                                database.session.add(product_exists)
                                 database.session.add(order)
+                                database.session.flush()
                                 break
 
-                        database.session.add(product_exists)
                         database.session.commit()
 

@@ -27,14 +27,14 @@ jwt = JWTManager(application)
 def productStatistics():
     sumRecieved = func.sum(OrderProduct.amountRecieved)
     sumRequested = func.sum(OrderProduct.amount)
-    statistics = OrderProduct.query.group_by(OrderProduct.product_id).with_entities(OrderProduct.product_id,sumRecieved,sumRequested-sumRecieved).having(sumRecieved > 0).all()
+    statistics = OrderProduct.query.group_by(OrderProduct.product_id).with_entities(OrderProduct.product_id,sumRequested,sumRequested-sumRecieved).having(sumRecieved > 0).all()
     statisticsJSON = [{"name" : Product.query.filter(Product.id == product[0]).first().name, "sold": int(product[1]), "waiting": int(product[2])} for product in statistics]
     return jsonify(statistics=statisticsJSON), 200
 
 @application.route("/categoryStatistics", methods=["GET"])
 @roleCheck("admin")
 def categoryStatistics():
-    sumRecieved = func.coalesce(func.sum(OrderProduct.amountRecieved), 0)
+    sumRecieved = func.coalesce(func.sum(OrderProduct.amount), 0)
     sortedCategories = Category.query.outerjoin(CategoryProduct, Category.id == CategoryProduct.category_id).outerjoin(OrderProduct, CategoryProduct.product_id == OrderProduct.product_id)\
         .group_by(Category.id).order_by(sumRecieved.desc()).order_by(Category.category_name).with_entities(Category.category_name).all()
     print(sortedCategories)
